@@ -13,5 +13,6 @@ export function renderPhotos(array) {
                     </a>
                    </li>`;
         })
-        .join("");
+         .join("");
+    
 }
