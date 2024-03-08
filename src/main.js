@@ -19,8 +19,8 @@ const fetchPhotosBtn = document.querySelector('[data-action="load-more"]');
 let page;
 let getValue;
 
-loading.classList.remove("loader");
-fetchPhotosBtn.classList.add("is-hidden");
+hideLoader();
+hideButton();
 
  const lightbox = new SimpleLightbox(".gallery a", {
        captionsData: "alt",
@@ -30,22 +30,24 @@ fetchPhotosBtn.classList.add("is-hidden");
 async function handleSearchSubmit(event) {
     event.preventDefault(); 
     gallery.innerHTML = "";
-    fetchPhotosBtn.classList.add("is-hidden");
+    console.clear();
+    hideButton();
     getValue = event.currentTarget.elements.search.value.trim();
 
     if (getValue !== "") {
-        loading.classList.add("loader");
+        showLoader();
         page = 1;
         try {
             const data = await fetchPhotos(getValue, 15, page);
             if (data.totalHits !== 0) {
-                  loading.classList.remove("loader");
+                hideLoader();
                   gallery.innerHTML = renderPhotos(data.hits);
-                  fetchPhotosBtn.classList.remove("is-hidden");
+                  showButton();
                   lightbox.refresh();
             } else {
                 handleNoResults();
-                }
+            }
+            lastPageResultInfo(data.totalHits);
             }
         catch (error) {
             handleFetchError(error);
@@ -55,20 +57,20 @@ async function handleSearchSubmit(event) {
 }
 
 async function onloadMore() {
-    loading.classList.add("loader");
-    fetchPhotosBtn.classList.add("is-hidden");
+    showLoader();
+    hideButton();
     page += 1;
 
     try {
         const data = await fetchPhotos(getValue, 15, page);
-        loading.classList.remove("loader");
+        hideLoader();
         const newPhotosHTML = renderPhotos(data.hits);
         gallery.insertAdjacentHTML('beforeend', newPhotosHTML);
-        fetchPhotosBtn.classList.remove("is-hidden");
+        showButton();
         fetchPhotosBtn.parentNode.insertBefore(loading, fetchPhotosBtn.nextSibling);
         lightbox.refresh();
         lastPageResultInfo(data.totalHits);
-        slowScroll();
+        smoothScroll();
     } catch (error) {
         handleFetchError(error);
     }
@@ -76,18 +78,34 @@ async function onloadMore() {
 
 async function lastPageResultInfo(totalHits) {
     if (totalHits <= page * 15) {
-        fetchPhotosBtn.classList.add("is-hidden");
+        hideButton();
         showEndOfResultsMessage();
     }
 }
 
-function slowScroll() {
+function smoothScroll() {
     const elem = document.querySelector(".gallery-item");
     const rect = elem.getBoundingClientRect();
     window.scrollBy({
         top: rect.height * 3,
         behavior: "smooth",
     });
+}
+
+function showButton() {
+    fetchPhotosBtn.classList.remove("is-hidden");
+}
+
+function hideButton() {
+    fetchPhotosBtn.classList.add("is-hidden");
+}
+
+function showLoader() {
+    loading.classList.add("loader");
+}
+
+function hideLoader() {
+    loading.classList.remove("loader");
 }
 
 
@@ -102,11 +120,10 @@ function handleNoResults() {
         close: false,
         timeout: 3000
     });
-    loading.classList.remove("loader");
+    hideLoader();
 }
 
-function handleFetchError(error) {
-    console.error(error);
+function handleFetchError() {
     iziToast.error({
         iconUrl: icon,
         message: `Sorry, there was an unexpected issue running your request!`,
@@ -117,7 +134,7 @@ function handleFetchError(error) {
         close: false,
         timeout: 3000
     });
-    loading.classList.remove("loader");
+    hideLoader()
 }
 
 function showEndOfResultsMessage() {
